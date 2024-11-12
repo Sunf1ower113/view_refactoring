@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cost List</title>
+</head>
+<body>
+    <h1>Cost List</h1>
+    <p>Today's Date: {{ Today }}</p>
+    <ul>
+        {% for cost, appr in costs %}
+            <li>
+                <strong>Description:</strong> {{ cost.description }}<br>
+                <strong>Section:</strong> {{ cost.section }}<br>
+                <strong>Order Name:</strong> {{ cost.orderid.name }}<br>
+                <strong>Approved:</strong>
+                <ul>
+                    {% for approval in appr %}
+                        <li>{{ approval.approver.username }} - {{ approval.approved_at }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

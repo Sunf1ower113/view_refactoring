@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список заказов</title>
+</head>
+<body>
+    <h1>Список заказов</h1>
+
+    <!-- Проверка на наличие заказов -->
+    {% if orders %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Название заказа</th>
+                    <th>Ответственные</th>
+                    <th>Клиенты</th>
+                    <th>Дата последнего контакта</th>
+                    <th>Задачи</th>
+                    <th>Избранное</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order, customers, favorite, lastcontact, task, resp in orders %}
+                    <tr>
+                        <td>{{ order.name }}</td>
+                        <td>
+                            {% for r in resp %}
+                                <p>{{ r.user.username }}</p>
+                            {% empty %}
+                                <p>Нет ответственных</p>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for c in customers %}
+                                <p>{{ c.customerid.title }}</p>
+                            {% empty %}
+                                <p>Нет клиентов</p>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if lastcontact %}
+                                <p>{{ lastcontact }}</p>
+                            {% else %}
+                                <p>Нет контактов</p>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if task %}
+                                <p>Задача: {{ task }}</p>
+                            {% else %}
+                                <p>Нет незавершенных задач</p>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if favorite %}
+                                <p>В избранном</p>
+                            {% else %}
+                                <p>Не в избранном</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Заказы не найдены</p>
+    {% endif %}
+
+    <!-- Отображение текущей даты -->
+    <footer>
+        <p>Сегодня: {{ Today }}</p>
+    </footer>
+</body>
+</html>
