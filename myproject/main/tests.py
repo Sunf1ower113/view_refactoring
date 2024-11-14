@@ -13,9 +13,9 @@ class OrderListTest(TestCase):
         search_data = UserSearch.objects.create()
         self.user = User.objects.create_user(username='testuser', password='password', search=search_data)
         self.client.force_login(self.user)
-        Orders.objects.create(name="Test Order 1", searchowners="Owner 1")
-        Orders.objects.create(name="Test Order 2", searchowners="Owner 2")
-        Orders.objects.create(name="Another Order", searchowners="Owner 3")
+        Orders.objects.create(name="Test Order 1", searchowners="Owner 1", cityid=3)
+        Orders.objects.create(name="Test Order 2", searchowners="Owner 2",cityid=3)
+        Orders.objects.create(name="Another Order", searchowners="Owner 3", cityid=3)
 
     def test_filter_orders_by_search_query(self):
         self.user.search.search = 'Test'
@@ -59,7 +59,7 @@ class OrderListTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 3)
 
-    def test_goals(self):
+    def test_goals_filter(self):
         Orders.objects.create(name="goals Order 1", goal=True)
         Orders.objects.create(name="goals Order 2", goal=False)
         Orders.objects.create(name="goals Order 3", goal=True)
@@ -70,7 +70,7 @@ class OrderListTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 2)
 
-    def test_favorites(self):
+    def test_favorites_filter(self):
         o1 = Orders.objects.create(name="favorite Order 1")
         Orders.objects.create(name="not favorite Order 2")
         o3 = Orders.objects.create(name="favorite Order 3")
@@ -83,7 +83,7 @@ class OrderListTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 2)
 
-    def test_manager(self):
+    def test_manager_filter(self):
         manager = User.objects.create_user(username="test manager", password="testpass")
         self.user.search.manager = manager
         self.user.search.save()
@@ -103,7 +103,7 @@ class OrderListTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 3)
 
-    def test_stage(self):
+    def test_stage_filter(self):
         Orders.objects.create(name="stage Order 1", stageid=1)
         Orders.objects.create(name="stage Order 2", stageid=2)
         Orders.objects.create(name="stage Order 3", stageid=1)
@@ -111,5 +111,18 @@ class OrderListTest(TestCase):
         self.user.search.stage = 1
         self.user.search.save()
         response = self.client.get(reverse('order_list'), {'action': 'count'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 2)
+
+    def test_city_filter(self):
+        Orders.objects.create(name="Order in City 1", cityid=1)
+        Orders.objects.create(name="Order in City 2", cityid=2)
+        Orders.objects.create(name="Order in City None", cityid=None)
+
+        self.user.search.company = 1
+        self.user.search.save()
+
+        response = self.client.get(reverse('order_list'), {'action': 'count'})
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 2)
