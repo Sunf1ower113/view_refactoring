@@ -76,6 +76,7 @@ class OrderListTest(TestCase):
         o3 = Orders.objects.create(name="favorite Order 3")
         Favorites.objects.create(user=self.user, order=o1)
         Favorites.objects.create(user=self.user, order=o3)
+
         self.user.search.favorite = True
         self.user.search.save()
         response = self.client.get(reverse('order_list'), {'action': 'count'})
@@ -86,14 +87,29 @@ class OrderListTest(TestCase):
         manager = User.objects.create_user(username="test manager", password="testpass")
         self.user.search.manager = manager
         self.user.search.save()
+
         order1 = Orders.objects.create(name="First order")
         order2 = Orders.objects.create(name="Second order")
         order3 = Orders.objects.create(name="Third order")
+
         Orderresponsible.objects.create(user=manager, orderid=order1)
         Orderresponsible.objects.create(user=manager, orderid=order2)
+
         Ordercomresponsible.objects.create(user=manager, orderid=order1)
         Ordercomresponsible.objects.create(user=manager, orderid=order2)
         Ordercomresponsible.objects.create(user=manager, orderid=order3)
+
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 3)
+
+    def test_stage(self):
+        Orders.objects.create(name="stage Order 1", stageid=1)
+        Orders.objects.create(name="stage Order 2", stageid=2)
+        Orders.objects.create(name="stage Order 3", stageid=1)
+
+        self.user.search.stage = 1
+        self.user.search.save()
+        response = self.client.get(reverse('order_list'), {'action': 'count'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 2)
