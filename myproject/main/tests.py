@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from .models import Orders, UserSearch
+from .models import Orders, UserSearch, Favorites, Ordercomresponsible, Orderresponsible
 import logging
 
 
@@ -31,7 +31,7 @@ class OrderListTest(TestCase):
 
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['count'], 0)  # Проверяем, что количество заказов равно 0
+        self.assertEqual(response.json()['count'], 0)
 
     def test_filter_orders_by_search_query_no_match(self):
         self.user.search.search = 'TestOrderNotFound'
@@ -40,7 +40,7 @@ class OrderListTest(TestCase):
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'],
-                         0)  # Проверяем, что заказов не найдено, если фильтрации не происходит
+                         0)
 
     def test_filter_orders_with_search_and_count(self):
         self.user.search.search = 'Test'
@@ -49,7 +49,7 @@ class OrderListTest(TestCase):
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'],
-                         2)  # Проверяем, что после фильтрации по "Test" вернется правильное количество заказов
+                         2)
 
     def test_all_orders_search(self):
         self.user.search.search = 'order'
@@ -57,15 +57,43 @@ class OrderListTest(TestCase):
 
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['count'], 3)  # Проверяем, что все заказы возвращаются, если search пустой
+        self.assertEqual(response.json()['count'], 3)
 
-    def test_only_first_if_in_else_passes(self):
-        Orders.objects.create(name="Test Order 3", goal=True)
-        Orders.objects.create(name="Test Order 4", goal=False)
-        Orders.objects.create(name="Test Order 5", goal=True)
+    def test_goals(self):
+        Orders.objects.create(name="goals Order 1", goal=True)
+        Orders.objects.create(name="goals Order 2", goal=False)
+        Orders.objects.create(name="goals Order 3", goal=True)
 
         self.user.search.goal = True
         self.user.search.save()
         response = self.client.get(reverse('order_list'), {'action': 'count'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['count'], 2)
+
+    def test_favorites(self):
+        o1 = Orders.objects.create(name="favorite Order 1")
+        Orders.objects.create(name="not favorite Order 2")
+        o3 = Orders.objects.create(name="favorite Order 3")
+        Favorites.objects.create(user=self.user, order=o1)
+        Favorites.objects.create(user=self.user, order=o3)
+        self.user.search.favorite = True
+        self.user.search.save()
+        response = self.client.get(reverse('order_list'), {'action': 'count'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 2)
+
+    def test_manager(self):
+        manager = User.objects.create_user(username="test manager", password="testpass")
+        self.user.search.manager = manager
+        self.user.search.save()
+        order1 = Orders.objects.create(name="First order")
+        order2 = Orders.objects.create(name="Second order")
+        order3 = Orders.objects.create(name="Third order")
+        Orderresponsible.objects.create(user=manager, orderid=order1)
+        Orderresponsible.objects.create(user=manager, orderid=order2)
+        Ordercomresponsible.objects.create(user=manager, orderid=order1)
+        Ordercomresponsible.objects.create(user=manager, orderid=order2)
+        Ordercomresponsible.objects.create(user=manager, orderid=order3)
+        response = self.client.get(reverse('order_list'), {'action': 'count'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 3)

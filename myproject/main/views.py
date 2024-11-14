@@ -32,6 +32,7 @@ class OrderList(LoginRequiredMixin, View):
                 order_res = []
                 for i in res:
                     order_res.append(i.orderid.orderid)
+
                 res = Ordercomresponsible.objects.filter(user=request.user.search.manager)
                 res = res.exclude(orderid__orderid__in=order_res)
                 for i in res:
