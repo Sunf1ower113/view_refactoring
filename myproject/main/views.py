@@ -16,18 +16,15 @@ class OrderList(LoginRequiredMixin, View):
                 Q(name__icontains=request.user.search.search) | Q(searchowners__icontains=request.user.search.search))
         else:
             if request.user.search.goal:
-                print(1)
                 orders = orders.filter(goal=True)
             # оптимизировать запрос к базе и убрать цикл (фильтрация)
             if request.user.search.favorite:
-                print(2)
                 fav = Favorites.objects.filter(user=request.user)
                 orders_fav = []
                 for i in fav:
                     orders_fav.append(i.order.orderid)
                 orders = orders.filter(orderid__in=orders_fav)
             if request.user.search.manager is not None:
-                print(3)
                 res = Orderresponsible.objects.filter(user=request.user.search.manager)
                 order_res = []
                 for i in res:
@@ -39,15 +36,11 @@ class OrderList(LoginRequiredMixin, View):
                     order_res.append(i.orderid.orderid)
                 orders = orders.filter(orderid__in=order_res)
             if request.user.search.stage is not None:
-                print(4)
                 orders = orders.filter(stageid=request.user.search.stage)
             if request.user.search.company is not None:
-                print(5)
                 orders = orders.filter(Q(cityid=None) | Q(cityid=request.user.search.company))
             if request.user.search.customer != '':
-                print(6)
                 orders = orders.filter(searchowners__icontains=request.user.search.customer)
-        print(orders)
         if request.GET['action'] == 'count':
             return JsonResponse({'count': orders.count()})
         orders = orders.order_by('-reiting')[int(request.GET['start']):int(request.GET['stop'])]
